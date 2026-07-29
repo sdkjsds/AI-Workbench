@@ -6,9 +6,18 @@
   "main": "main.js",
   "scripts": {
     "start": "node start.js",
-    "server": "node server/index.js"
+    "server": "node server/index.js",
+    "cap:init": "cap init",
+    "cap:add:android": "cap add android",
+    "cap:sync": "cap sync",
+    "cap:open:android": "cap open android"
   },
   "dependencies": {
     "electron": "^33.4.11"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^6.1.2",
+    "@capacitor/core": "^6.1.2",
+    "@capacitor/android": "^6.1.2"
   }
 }

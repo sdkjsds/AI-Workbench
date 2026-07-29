@@ -1,0 +1,12 @@
+{
+  "appId": "com.zhiliu.app",
+  "appName": "知流",
+  "webDir": "server/public",
+  "server": {
+    "url": "https://ai-wordbench.onrender.com",
+    "cleartext": false
+  },
+  "android": {
+    "allowMixedContent": false
+  }
+}

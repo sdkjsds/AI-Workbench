@@ -2,3 +2,11 @@ node_modules/
 *.traineddata
 _test_*.js
 data/
+
+# Android / Capacitor 构建产物（android/ 源码需提交，以下忽略）
+android/.gradle/
+android/app/build/
+android/build/
+android/local.properties
+*.keystore
+*.jks
