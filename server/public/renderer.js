@@ -470,6 +470,14 @@ async function renderSettings(v) {
     hint.className = 'hint';
     hint.textContent = r.hint || '';
     row.append(lab, inp, hint);
+    if (s._envProvided && s._envProvided[r.key]) {
+      inp.disabled = true;
+      const envNote = document.createElement('div');
+      envNote.className = 'hint';
+      envNote.style.color = '#2a7';
+      envNote.textContent = '✓ 已由服务器环境变量配置（' + s._envProvided[r.key] + '），无需填写';
+      row.append(envNote);
+    }
     wrap.append(row);
   });
 
@@ -481,6 +489,14 @@ async function renderSettings(v) {
   ta.dataset.key = 'dailyPrompt';
   ta.value = s.dailyPrompt || '';
   pr.append(pl, ta);
+  if (s._envProvided && s._envProvided.dailyPrompt) {
+    ta.disabled = true;
+    const envNote = document.createElement('div');
+    envNote.className = 'hint';
+    envNote.style.color = '#2a7';
+    envNote.textContent = '✓ 已由服务器环境变量配置（' + s._envProvided.dailyPrompt + '），无需填写';
+    pr.append(envNote);
+  }
   wrap.append(pr);
 
   const sr = document.createElement('div');

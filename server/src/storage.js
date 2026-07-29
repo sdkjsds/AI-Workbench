@@ -39,10 +39,32 @@ async function writeJSON(file, obj) {
   await fs.writeFile(file, JSON.stringify(obj, null, 2), 'utf8');
 }
 
-async function getSettings() { return readJSON(settingsFile(), defaultSettings()); }
+// 环境变量可覆盖 AI 相关配置（部署到 Render 等无持久盘平台时防丢）
+const ENV_SETTINGS = {
+  aiApiKey: 'ZHILIU_AI_API_KEY',
+  aiBaseURL: 'ZHILIU_AI_BASE_URL',
+  aiModel: 'ZHILIU_AI_MODEL',
+  dailyPrompt: 'ZHILIU_AI_PROMPT',
+};
+
+async function getSettings() {
+  const raw = await readJSON(settingsFile(), defaultSettings());
+  const merged = { ...defaultSettings(), ...raw, sources: raw.sources || {} };
+  const envProvided = {};
+  for (const [key, envVar] of Object.entries(ENV_SETTINGS)) {
+    const v = process.env[envVar];
+    if (v !== undefined && v !== '') {
+      merged[key] = v;
+      envProvided[key] = envVar;
+    }
+  }
+  merged._envProvided = envProvided;
+  return merged;
+}
 async function saveSettings(s) {
   const base = defaultSettings();
-  const merged = { ...base, ...s, sources: s.sources || base.sources };
+  const { _envProvided, ...rest } = s;
+  const merged = { ...base, ...rest, sources: rest.sources || base.sources };
   await writeJSON(settingsFile(), merged);
   return merged;
 }

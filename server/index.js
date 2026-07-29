@@ -27,7 +27,10 @@ function isModule(m) { return MODULES.includes(m); }
 
 // ---------- 设置 ----------
 app.get('/api/settings', async (req, res) => {
-  res.json(await storage.getSettings());
+  const s = await storage.getSettings();
+  // 不向前端泄露环境变量提供的密钥
+  if (s._envProvided && s._envProvided.aiApiKey) s.aiApiKey = '';
+  res.json(s);
 });
 app.post('/api/settings', async (req, res) => {
   try {

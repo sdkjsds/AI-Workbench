@@ -69,6 +69,21 @@ npm start              # 自动起 server 并打开 Electron 窗口
 
 > 其他平台同理：只要能跑 Node + 持久化磁盘即可（Railway / Fly.io / 自有服务器等）。
 
+### Render 免费版的特别处理（推荐起步）
+免费版**不能挂持久化磁盘**，服务重启/休眠后会清空 `data/` 目录。为此本项目做了适配：
+
+- **AI Key 走环境变量（防丢）**：Render 控制台 → 该服务 → **Environment** 添加：
+  - `ZHILIU_AI_API_KEY` = 你的 DeepSeek Key
+  - `ZHILIU_AI_BASE_URL`（可选，默认 `https://api.deepseek.com/v1`）
+  - `ZHILIU_AI_MODEL`（可选，默认 `deepseek-chat`）
+  - `ZHILIU_AI_PROMPT`（可选，覆盖每日新知提示词）
+  
+  设了环境变量后，即使 `data/` 被清空，「每日新知」依然可用；设置页对应字段会显示「已由服务器环境变量配置」且不可编辑。
+- **其余设置**（拉取间隔、RSS 源等）仍存 `data/`，免费版下重启会重置为默认，需重新设置。
+- **保活防止休眠**：免费版约 15 分钟无访问会休眠。用免费服务 [UptimeRobot](https://uptimerobot.com) 建一个 HTTP Monitor，指向 `https://你的服务.onrender.com/api/settings`，每 5 分钟 ping 一次即可保持唤醒（注意：同源自 ping 不被允许，需用外部监控）。
+
+> 若想数据完全持久（随手记 / 已读不丢），升级到 Render Starter（$7/月，可挂磁盘）或改用 Oracle Always Free / 自有服务器。
+
 ## 配置
 1. 打开应用 → 左侧「设置」
 2. **LLM** 栏填 DeepSeek API Key（`https://platform.deepseek.com`，很便宜）；不填则「每日新知」不可用，其余三流照常
