@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>知流</title>
+  <link rel="manifest" href="/manifest.json" />
+  <link rel="apple-touch-icon" href="/icon-192.png" />
+  <meta name="theme-color" content="#2f6df6" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">知流</div>
+      <nav id="nav">
+        <button class="nav-item active" data-view="overview">总览</button>
+        <button class="nav-item" data-view="knowledge">知识流</button>
+        <button class="nav-item" data-view="gongkao">公考·政治</button>
+        <button class="nav-item" data-view="licai">理财·经济</button>
+        <button class="nav-item" data-view="screenshots">随手记</button>
+        <button class="nav-item" data-view="settings">设置</button>
+      </nav>
+      <div class="sidebar-foot">数据存于服务器 · 多端同步</div>
+    </aside>
+    <main class="main">
+      <header class="topbar">
+        <h1 id="view-title">总览</h1>
+        <div id="topbar-actions"></div>
+      </header>
+      <section id="view" class="view"></section>
+    </main>
+  </div>
+  <script src="/vendor/marked/lib/marked.umd.js"></script>
+  <script src="/api.js"></script>
+  <script src="renderer.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js').catch((e) => console.warn('SW 注册失败', e));
+      });
+    }
+  </script>
+</body>
+</html>

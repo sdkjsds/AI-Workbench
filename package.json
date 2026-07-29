@@ -1,0 +1,14 @@
+{
+  "name": "zhiliu",
+  "version": "0.1.0",
+  "private": true,
+  "description": "知流 - 本地正向知识流工作台，用自动拉取的知识流替代刷短视频",
+  "main": "main.js",
+  "scripts": {
+    "start": "node start.js",
+    "server": "node server/index.js"
+  },
+  "dependencies": {
+    "electron": "^33.4.11"
+  }
+}

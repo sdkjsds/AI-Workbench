@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: zhiliu
+    runtime: node
+    plan: free
+    buildCommand: cd server && npm install
+    startCommand: cd server && npm start
+    healthCheckPath: /api/settings
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      # 持久化磁盘：在 Render 控制台为服务挂载磁盘（如 /var/data/zhiliu），
+      # 并把下方 DATA_DIR 设为该挂载路径，否则重启会丢失数据。
+      - key: DATA_DIR
+        value: "/var/data/zhiliu"

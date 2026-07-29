@@ -1,0 +1,20 @@
+{
+  "name": "zhiliu-server",
+  "version": "0.1.0",
+  "private": true,
+  "description": "知流后端服务：RSS 抓取、每日新知、正文提取、存储、OCR，并为桌面壳与手机 PWA 提供统一 API 与静态前端。",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "@mozilla/readability": "^0.6.0",
+    "cors": "^2.8.5",
+    "express": "^4.19.2",
+    "jsdom": "^20.0.3",
+    "marked": "^18.0.7",
+    "multer": "^2.0.1",
+    "rss-parser": "^3.13.0",
+    "tesseract.js": "^5.1.1"
+  }
+}

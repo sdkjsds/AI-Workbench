@@ -1,0 +1,4 @@
+node_modules/
+*.traineddata
+_test_*.js
+data/
