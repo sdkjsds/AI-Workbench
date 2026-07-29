@@ -21,7 +21,27 @@ function bindNav() {
     $$('.nav-item').forEach((x) => x.classList.remove('active'));
     b.classList.add('active');
     navigate(b.dataset.view);
+    closeSidebar();
   });
+  // Hamburger toggle
+  const hb = document.getElementById('hamburger');
+  const sb = document.getElementById('sidebar');
+  const ov = document.getElementById('sidebarOverlay');
+  if (hb) hb.addEventListener('click', toggleSidebar);
+  if (ov) ov.addEventListener('click', closeSidebar);
+}
+
+function toggleSidebar() {
+  const sb = document.getElementById('sidebar');
+  const ov = document.getElementById('sidebarOverlay');
+  sb.classList.toggle('open');
+  ov.classList.toggle('show');
+}
+function closeSidebar() {
+  const sb = document.getElementById('sidebar');
+  const ov = document.getElementById('sidebarOverlay');
+  sb && sb.classList.remove('open');
+  ov && ov.classList.remove('show');
 }
 
 document.addEventListener('DOMContentLoaded', init);

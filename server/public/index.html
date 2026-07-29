@@ -11,7 +11,8 @@
 </head>
 <body>
   <div class="app">
-    <aside class="sidebar">
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+    <aside class="sidebar" id="sidebar">
       <div class="brand">知流</div>
       <nav id="nav">
         <button class="nav-item active" data-view="overview">总览</button>
@@ -25,6 +26,7 @@
     </aside>
     <main class="main">
       <header class="topbar">
+        <button class="hamburger" id="hamburger">☰</button>
         <h1 id="view-title">总览</h1>
         <div id="topbar-actions"></div>
       </header>
