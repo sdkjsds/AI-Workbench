@@ -11,8 +11,8 @@ function showFatal(msg) {
   const v = document.getElementById('view');
   if (v) v.innerHTML = '<div class="card" style="color:#c00;white-space:pre-wrap">⚠️ 初始化出错：\n' + String(msg) + '</div>';
 }
-window.addEventListener('error', (e) => showFatal(e.message));
-window.addEventListener('unhandledrejection', (e) => showFatal((e.reason && e.reason.message) || e.reason));
+window.addEventListener('error', (e) => console.error('运行时错误:', e.message));
+window.addEventListener('unhandledrejection', (e) => console.error('未处理的 Promise 拒绝:', (e.reason && e.reason.message) || e.reason));
 
 function bindNav() {
   $('#nav').addEventListener('click', (e) => {
@@ -109,10 +109,12 @@ function tabBtn(label, active, onclick) {
 
 // ---------- 总览 ----------
 async function renderOverview(v) {
+  v.innerHTML = '<div class="empty">加载中…</div>';
+  const safe = async (p) => { try { const r = await p; return Array.isArray(r) ? r : []; } catch (e) { console.warn('总览子项加载失败:', e.message); return []; } };
   const [k, g, l, d, stories, shots] = await Promise.all([
-    window.api.getFeed('knowledge'), window.api.getFeed('gongkao'), window.api.getFeed('licai'),
-    window.api.getFeed('dressing'),
-    window.api.getStories(), window.api.getScreenshots(),
+    safe(window.api.getFeed('knowledge')), safe(window.api.getFeed('gongkao')), safe(window.api.getFeed('licai')),
+    safe(window.api.getFeed('dressing')),
+    safe(window.api.getStories()), safe(window.api.getScreenshots()),
   ]);
   const unread = (a) => a.filter((x) => !x.read).length;
   const counts = { knowledge: unread(k), gongkao: unread(g), licai: unread(l), dressing: unread(d), screenshots: shots.length };
@@ -427,6 +429,7 @@ async function refreshFeed(module) {
     const items = await window.api.refreshFeed(module);
     state.feeds[module] = items;
     navigate(module);
+    window.scrollTo(0, 0);
     toast('已拉取 ' + items.length + ' 条');
   } catch (err) {
     toast('拉取失败：' + err.message);

@@ -1,93 +1,58 @@
 // 前端 API 封装：统一通过 fetch 调用后端 REST 接口
 // 桌面壳与手机 PWA 共用同一套接口，无需 Electron IPC
+
+async function req(url, opts = {}) {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), opts.timeout || 20000);
+  try {
+    const r = await fetch(url, { ...opts, signal: ctrl.signal });
+    if (!r.ok) {
+      let msg = '请求失败(' + r.status + ')';
+      try { const j = await r.json(); if (j && j.error) msg = j.error; } catch (e) {}
+      throw new Error(msg);
+    }
+    return r.json();
+  } catch (e) {
+    if (e.name === 'AbortError') throw new Error('请求超时');
+    throw e;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 window.api = {
-  async getSettings() {
-    const r = await fetch('/api/settings');
-    return r.json();
-  },
+  async getSettings() { return req('/api/settings'); },
   async saveSettings(s) {
-    const r = await fetch('/api/settings', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(s),
-    });
-    return r.json();
+    return req('/api/settings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(s) });
   },
   async refreshFeed(module) {
-    const r = await fetch(`/api/feed/${module}/refresh`, { method: 'POST' });
-    if (!r.ok) throw new Error((await r.json()).error || '拉取失败');
-    return r.json();
+    return req(`/api/feed/${module}/refresh`, { method: 'POST' });
   },
-  async getFeed(module) {
-    const r = await fetch(`/api/feed/${module}`);
-    return r.json();
-  },
+  async getFeed(module) { return req(`/api/feed/${module}`); },
   async markRead(module, id) {
-    await fetch(`/api/feed/${module}/markread`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id }),
-    });
+    await req(`/api/feed/${module}/markread`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) });
   },
   async fetchArticle(url) {
-    const r = await fetch('/api/article?url=' + encodeURIComponent(url));
-    if (!r.ok) throw new Error('拉取原文失败');
-    return r.json();
+    return req('/api/article?url=' + encodeURIComponent(url));
   },
-  async getStories() {
-    const r = await fetch('/api/stories');
-    return r.json();
-  },
-  async generateStory() {
-    const r = await fetch('/api/story/generate', { method: 'POST' });
-    if (!r.ok) throw new Error((await r.json()).error || '生成失败');
-    return r.json();
-  },
-  async getDressingStories() {
-    const r = await fetch('/api/dressing/stories');
-    return r.json();
-  },
-  async generateDressingInspiration() {
-    const r = await fetch('/api/dressing/generate', { method: 'POST' });
-    if (!r.ok) throw new Error((await r.json()).error || '生成失败');
-    return r.json();
-  },
+  async getStories() { return req('/api/stories'); },
+  async generateStory() { return req('/api/story/generate', { method: 'POST' }); },
+  async getDressingStories() { return req('/api/dressing/stories'); },
+  async generateDressingInspiration() { return req('/api/dressing/generate', { method: 'POST' }); },
   async briefArticle(title, summary) {
-    const r = await fetch('/api/article/brief', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ title, summary }),
-    });
-    if (!r.ok) throw new Error((await r.json()).error || '简述失败');
-    return r.json();
+    return req('/api/article/brief', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ title, summary }) });
   },
-  async getScreenshots() {
-    const r = await fetch('/api/screenshots');
-    return r.json();
-  },
+  async getScreenshots() { return req('/api/screenshots'); },
   async addTextNote(content, tags) {
-    const r = await fetch('/api/screenshots/text', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ content, tags }),
-    });
-    return r.json();
+    return req('/api/screenshots/text', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ content, tags }) });
   },
   async uploadImage(file) {
     const fd = new FormData();
     fd.append('image', file);
-    const r = await fetch('/api/screenshots/image', { method: 'POST', body: fd });
-    if (!r.ok) throw new Error((await r.json()).error || '上传失败');
-    return r.json();
+    return req('/api/screenshots/image', { method: 'POST', body: fd, timeout: 60000 });
   },
   async updateScreenshot(id, patch) {
-    await fetch(`/api/screenshots/${id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(patch),
-    });
+    await req(`/api/screenshots/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(patch) });
   },
-  openExternal(url) {
-    window.open(url, '_blank');
-  },
+  openExternal(url) { window.open(url, '_blank'); },
 };
