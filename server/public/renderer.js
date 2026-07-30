@@ -476,7 +476,11 @@ function renderArticle(v, art) {
   const content = document.createElement('div');
   content.className = 'article-content';
   if (art.content && art.content.trim()) {
-    content.innerHTML = art.content;
+    // 异步拉回的原文 HTML 直接注入前先剥离 script/style 标签，
+    // 避免原文内联脚本或破坏性 CSS（如 white-space:nowrap、固定 width）撑破布局
+    content.innerHTML = art.content
+      .replace(/<script[\s\S]*?<\/script>/gi, '')
+      .replace(/<style[\s\S]*?<\/style>/gi, '');
   } else if (art.summary) {
     const p = document.createElement('p');
     p.textContent = art.summary;
