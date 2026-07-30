@@ -1,5 +1,5 @@
 const state = { settings: null, feeds: {}, stories: [], screenshots: [], knowledgeTab: 'stories', dressingTab: 'inspiration' };
-const TITLES = { overview: '总览', knowledge: '知识流', gongkao: '公考·政治理论', licai: '理财·经济', dressing: '穿搭', screenshots: '随手记', settings: '设置' };
+const TITLES = { overview: '总览', knowledge: '知识流', gongkao: '公考·政治理论', licai: '理财·经济', dressing: '审美·穿搭', screenshots: '随手记', settings: '设置' };
 
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
@@ -118,11 +118,12 @@ async function renderOverview(v) {
   ]);
   const unread = (a) => a.filter((x) => !x.read).length;
   const counts = { knowledge: unread(k), gongkao: unread(g), licai: unread(l), dressing: unread(d), screenshots: shots.length };
+  v.innerHTML = '';
   const modules = [
     { key: 'knowledge', name: '知识流', desc: '每日新知 + 知识卡片' },
     { key: 'gongkao', name: '公考·政治', desc: '常识 / 政治理论' },
     { key: 'licai', name: '理财·经济', desc: '热点 / 经济事件' },
-    { key: 'dressing', name: '穿搭', desc: '审美输入 + 每日灵感' },
+    { key: 'dressing', name: '审美·穿搭', desc: '审美输入 + 每日灵感' },
     { key: 'screenshots', name: '随手记', desc: '图片收集 + OCR' },
   ];
   const grid = document.createElement('div');
@@ -333,24 +334,33 @@ async function openArticle(it) {
   const v = $('#view');
   v.innerHTML = '';
   $('#topbar-actions').innerHTML = '';
-  const loading = document.createElement('div');
-  loading.className = 'empty';
-  loading.textContent = '正在拉取原文…';
-  v.append(loading);
+
+  // 先用 RSS 自带内容/摘要做首屏，立刻可见，消除空白等待
+  const quick = (it.content && it.content.trim().length > 30)
+    ? resolveRssContent(it.content)
+    : (it.summary ? '<p>' + escapeHtml(it.summary) + '</p>' : '');
+  if (quick) {
+    renderArticle(v, { title: it.title, url: it.link, content: quick, summary: it.summary || '' });
+  } else {
+    const loading = document.createElement('div');
+    loading.className = 'empty';
+    loading.textContent = '正在拉取原文…';
+    v.append(loading);
+  }
+
+  // 后台异步拉取原文，成功后再替换
   try {
     const art = await window.api.fetchArticle(it.link);
-    renderArticle(v, art);
+    renderArticle(v, { ...art, url: it.link });
   } catch (err) {
-    // 拉取原文失败：降级用 RSS 自带正文/摘要
-    renderArticle(v, {
-      title: it.title,
-      url: it.link,
-      content: (it.content && it.content.trim().length > 30)
-        ? resolveRssContent(it.content)
-        : '',
-      summary: it.summary || '',
-      fromRss: true,
-    });
+    if (!quick) {
+      renderArticle(v, { title: it.title, url: it.link, content: '', summary: it.summary || '', fromRss: true });
+    } else {
+      const note = document.createElement('div');
+      note.className = 'rss-note';
+      note.textContent = '（原文页面拉取失败，以上为订阅源自带摘要）';
+      v.append(note);
+    }
   }
 }
 

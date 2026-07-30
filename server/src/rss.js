@@ -25,11 +25,12 @@ const DEFAULT_SOURCE_MAP = {
     'https://www.tmtpost.com/rss',
   ],
   dressing: [
-    'https://www.vogue.com/feed',
+    // 实测可用（2026-07-30）：ELLE 英文，含秀场/红毯/穿搭报道，实时
     'https://www.elle.com/rss/all.xml',
-    'https://www.gq.com/feed',
+    // Harper's Bazaar 英文，有时装周/红毯/风格内容，实时
     'https://www.harpersbazaar.com/rss/all.xml',
-    'https://www.whowhatwear.com/feed',
+    // WWD（女装日报）：时装商业 + 秀场/红毯报道，偏专业审美
+    'https://wwd.com/feed/',
   ],
 };
 

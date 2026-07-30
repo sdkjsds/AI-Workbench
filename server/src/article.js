@@ -13,12 +13,17 @@ const HEADERS = {
 async function fetchText(url) {
   let lastErr;
   for (let attempt = 0; attempt < 2; attempt++) {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 10000);
     try {
-      const res = await fetch(url, { headers: HEADERS, redirect: 'follow' });
+      const res = await fetch(url, { headers: HEADERS, redirect: 'follow', signal: ctrl.signal });
       if (!res.ok) throw new Error(`拉取失败 (${res.status})`);
       return await res.text();
     } catch (e) {
       lastErr = e;
+      if (e.name === 'AbortError') break; // 超时不再重试，直接失败
+    } finally {
+      clearTimeout(timer);
     }
   }
   throw lastErr;
