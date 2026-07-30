@@ -326,7 +326,7 @@ async function renderFeedList(v, module) {
   v.append(grid);
 }
 
-async function openArticle(it, moduleArg) {
+async function openArticle(it, moduleArg, direction) {
   const module = moduleArg || state.lastView;
   const items = (module && state.feeds[module]) || [];
   const idx = items.findIndex((x) => x.id === it.id || x.link === it.link);
@@ -348,6 +348,26 @@ async function openArticle(it, moduleArg) {
     loading.className = 'empty';
     loading.textContent = '正在拉取原文…';
     v.append(loading);
+  }
+
+  // 滑动切换时：内容滑入动画（旧内容已在 slideTo 中先滑出）
+  if (direction) {
+    v.style.overflowX = 'hidden';
+    v.style.transition = 'none';
+    v.style.opacity = '0';
+    v.style.transform = direction === 'left' ? 'translateX(35%)' : 'translateX(-35%)';
+    void v.offsetWidth; // 强制回流，确保起点立即生效
+    requestAnimationFrame(() => {
+      v.style.transition = 'transform .28s ease, opacity .28s ease';
+      v.style.transform = 'translateX(0)';
+      v.style.opacity = '1';
+      setTimeout(() => {
+        v.style.transition = '';
+        v.style.transform = '';
+        v.style.opacity = '';
+        v.style.overflowX = '';
+      }, 320);
+    });
   }
 
   // 后台异步拉取原文，成功后再替换
@@ -481,14 +501,26 @@ function attachArticleSwipe(el) {
       // 左滑 → 下一条
       if (ctx.index >= ctx.items.length - 1) { toast('这是最后一条'); return; }
       ctx.index++;
-      openArticle(ctx.items[ctx.index], ctx.module);
+      slideTo(ctx.items[ctx.index], ctx.module, 'left');
     } else {
       // 右滑 → 上一条
       if (ctx.index <= 0) { toast('这是第一条'); return; }
       ctx.index--;
-      openArticle(ctx.items[ctx.index], ctx.module);
+      slideTo(ctx.items[ctx.index], ctx.module, 'right');
     }
   }, { passive: true });
+}
+
+// 滑动切换：先让当前文章滑出，再渲染下一篇并从反方向滑入，形成平滑过渡
+function slideTo(it, module, dir) {
+  const v = $('#view');
+  v.style.overflowX = 'hidden';
+  v.style.transition = 'transform .25s ease, opacity .25s ease';
+  v.style.transform = dir === 'left' ? 'translateX(-35%)' : 'translateX(35%)';
+  v.style.opacity = '0';
+  setTimeout(() => {
+    openArticle(it, module, dir);
+  }, 250);
 }
 
 async function refreshFeed(module) {
@@ -734,4 +766,42 @@ function parseSources(text) {
     if (cur && /^https?:\/\//.test(line)) out[cur].push(line);
   });
   return out;
+}
+
+// ---------- 安卓硬件返回键 ----------
+// 层级：文章详情 → 小板块列表 → 总览 →（在总览连按两次）退出应用
+// 仅 APK 内（window.Capacitor 存在）生效；PWA / 桌面忽略，交给浏览器自身返回。
+function setupAndroidBack() {
+  const cap = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App;
+  if (!cap) return;
+  let lastBack = 0;
+  cap.addListener('backButton', () => {
+    const now = Date.now();
+    if (state.inArticle) {
+      // 文章详情：返回到所属小板块列表
+      navigate(state.lastView || 'knowledge');
+      lastBack = 0;
+      return;
+    }
+    if (state.lastView && state.lastView !== 'overview') {
+      // 小板块 / 其它界面：返回总览
+      navigate('overview');
+      lastBack = 0;
+      return;
+    }
+    // 已在总览：1.8 秒内连按两次才退出，避免误触
+    if (now - lastBack < 1800) {
+      cap.exitApp();
+    } else {
+      lastBack = now;
+      toast('再按一次返回键退出应用');
+    }
+  });
+}
+
+// Capacitor 桥通常在页面加载时注入；若尚未就绪，等 load 后再尝试
+if (window.Capacitor) {
+  setupAndroidBack();
+} else {
+  window.addEventListener('load', () => setTimeout(setupAndroidBack, 200));
 }
