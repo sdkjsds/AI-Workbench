@@ -25,9 +25,11 @@ function bindNav() {
   });
   // Hamburger toggle
   const hb = document.getElementById('hamburger');
+  const sc = document.getElementById('sidebarClose');
   const sb = document.getElementById('sidebar');
   const ov = document.getElementById('sidebarOverlay');
   if (hb) hb.addEventListener('click', toggleSidebar);
+  if (sc) sc.addEventListener('click', closeSidebar);
   if (ov) ov.addEventListener('click', closeSidebar);
 }
 
