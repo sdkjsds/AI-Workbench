@@ -38,37 +38,56 @@ function defaultSources(module) {
   return DEFAULT_SOURCE_MAP[module] || [];
 }
 
-async function fetchModule(module, sources) {
+const LATEST_PER_SOURCE = 20; // 每个源单次最多取多少条（扩大窗口，便于累积更旧内容）
+
+function mapItem(it, module, feedTitle, url) {
+  const link = it.link || '';
+  const summaryRaw = it.contentSnippet || it.content || '';
+  const fullContent = it['content:encoded'] || it.content || '';
+  return {
+    id: link,
+    module,
+    title: it.title || '(无标题)',
+    summary: summaryRaw.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').slice(0, 300),
+    content: fullContent || '',
+    link,
+    source: feedTitle || url,
+    date: it.isoDate || it.pubDate || new Date().toISOString(),
+    read: false,
+    saved: false,
+  };
+}
+
+// 抓取一个/多个分页，跨源跨页去重，按时间倒序返回全部（不再截断到 10 条）
+async function fetchModule(module, sources, opts = {}) {
+  const startPage = opts.startPage || 1;
+  const pages = opts.pages || 1;
   const results = [];
   const seen = new Set();
   await Promise.all(sources.map(async (url) => {
-    try {
-      const feed = await parser.parseURL(url);
-      (feed.items || []).slice(0, 10).forEach((it) => {
-        const link = it.link || '';
-        if (!link || seen.has(link)) return;
-        seen.add(link);
-        const summaryRaw = it.contentSnippet || it.content || '';
-        const fullContent = it['content:encoded'] || it.content || '';
-        results.push({
-          id: link,
-          module,
-          title: it.title || '(无标题)',
-          summary: summaryRaw.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').slice(0, 300),
-          content: fullContent || '',
-          link,
-          source: feed.title || url,
-          date: it.isoDate || it.pubDate || new Date().toISOString(),
-          read: false,
-          saved: false,
+    for (let p = startPage; p < startPage + pages; p++) {
+      try {
+        const u = p > 1 ? url + (url.includes('?') ? '&' : '?') + 'paged=' + p : url;
+        const feed = await parser.parseURL(u);
+        const title = feed.title || url;
+        let added = 0;
+        (feed.items || []).slice(0, LATEST_PER_SOURCE).forEach((it) => {
+          const link = it.link || '';
+          if (!link || seen.has(link)) return;
+          seen.add(link);
+          results.push(mapItem(it, module, title, url));
+          added++;
         });
-      });
-    } catch (e) {
-      console.warn('RSS fetch failed:', url, e.message);
+        // 源不支持分页时，第 2 页起内容与首页完全相同 → added=0，停止翻页避免无效请求
+        if (added === 0 && p > startPage) break;
+      } catch (e) {
+        console.warn('RSS fetch failed:', url, 'page', p, e.message);
+        break;
+      }
     }
   }));
   results.sort((a, b) => new Date(b.date) - new Date(a.date));
-  return results.slice(0, 10);
+  return results;
 }
 
 module.exports = { defaultSources, fetchModule };

@@ -496,21 +496,20 @@ async function refreshFeed(module) {
   try {
     const oldItems = state.feeds[module] || [];
     const oldIds = new Set(oldItems.map((it) => it.id || it.link));
-    const items = await window.api.refreshFeed(module);
+    const data = await window.api.refreshFeed(module);
+    const items = data.items || [];
     state.feeds[module] = items;
     navigate(module);
     window.scrollTo(0, 0);
-    if (!Array.isArray(items)) {
-      toast('返回数据异常');
-      return;
-    }
-    const newCount = items.filter((it) => !oldIds.has(it.id || it.link)).length;
+    const newCount = (data.newCount != null)
+      ? data.newCount
+      : items.filter((it) => !oldIds.has(it.id || it.link)).length;
     if (items.length === 0) {
       toast('未拉取到内容，请检查网络或 RSS 源');
-    } else if (newCount === 0) {
-      toast('已拉取 ' + items.length + ' 条，与上次内容相同');
+    } else if (newCount > 0) {
+      toast('已更新：新增 ' + newCount + ' 条（共 ' + items.length + ' 条）');
     } else {
-      toast('已拉取 ' + newCount + ' 条新内容');
+      toast('已拉到最早的内容（共 ' + items.length + ' 条）');
     }
   } catch (err) {
     toast('拉取失败：' + err.message);

@@ -52,15 +52,44 @@ app.post('/api/feed/:module/refresh', async (req, res) => {
     const sources = (settings.sources && settings.sources[module] && settings.sources[module].length)
       ? settings.sources[module]
       : rss.defaultSources(module);
-    const items = await rss.fetchModule(module, sources);
+
     const old = await storage.getFeed(module);
-    const oldMap = new Map(old.map((x) => [x.id, x]));
-    items.forEach((it) => {
-      const o = oldMap.get(it.id);
+    const oldIds = new Set(old.map((x) => x.id));
+    const merged = new Map(old.map((x) => [x.id, x]));
+
+    // 1) 先拉最新一页，捕捉新发布的内容
+    const latest = await rss.fetchModule(module, sources, { pages: 1 });
+    latest.forEach((it) => {
+      const o = merged.get(it.id);
       if (o) { it.read = o.read; it.saved = o.saved; }
+      merged.set(it.id, it);
     });
+    const newFromLatest = latest.filter((it) => !oldIds.has(it.id)).length;
+
+    // 2) 若顶部没有新内容，回溯更旧的页，保证每次刷新都能拉到"再之前一点"的信息
+    if (newFromLatest === 0) {
+      const meta = await storage.getFeedMeta(module);
+      let page = (meta.page || 1) + 1;
+      const MAX_BACKFILL = 3;
+      for (let i = 0; i < MAX_BACKFILL; i++) {
+        const older = await rss.fetchModule(module, sources, { pages: 1, startPage: page });
+        let fresh = 0;
+        older.forEach((it) => { if (!merged.has(it.id)) { merged.set(it.id, it); fresh++; } });
+        if (fresh === 0) break; // 源不支持分页或已到头
+        page++;
+      }
+      await storage.saveFeedMeta(module, { page: page - 1 });
+    }
+
+    // 3) 排序 + 容量上限，写回
+    let items = [...merged.values()].sort((a, b) => new Date(b.date) - new Date(a.date));
+    const CAP = 200;
+    if (items.length > CAP) items = items.slice(0, CAP);
     await storage.saveFeed(module, items);
-    res.json(items);
+
+    // 4) 返回完整列表 + 本次新增条数（前端不再用"与上次内容相同"）
+    const newCount = items.filter((it) => !oldIds.has(it.id)).length;
+    res.json({ items, newCount });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 app.post('/api/feed/:module/markread', async (req, res) => {

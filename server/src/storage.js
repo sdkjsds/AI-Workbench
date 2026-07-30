@@ -72,6 +72,10 @@ async function saveSettings(s) {
 
 async function getFeed(module) { return readJSON(path.join(feedsDir(), module + '.json'), []); }
 async function saveFeed(module, items) { await writeJSON(path.join(feedsDir(), module + '.json'), items); }
+// 分页回溯游标：记录已拉取到第几页（更旧的），避免每次都从第一页翻
+function feedMetaFile(module) { return path.join(feedsDir(), module + '.meta.json'); }
+async function getFeedMeta(module) { return readJSON(feedMetaFile(module), { page: 1 }); }
+async function saveFeedMeta(module, meta) { await writeJSON(feedMetaFile(module), meta); }
 async function markRead(module, id) {
   const arr = await getFeed(module);
   const i = arr.findIndex((x) => x.id === id);
@@ -142,6 +146,7 @@ async function updateScreenshot(id, patch) {
 module.exports = {
   init, getSettings, saveSettings,
   getFeed, saveFeed, markRead,
+  getFeedMeta, saveFeedMeta,
   getStories, saveStory,
   getDressingStories, saveDressingStory,
   getScreenshots, addImageShot, addTextNote, updateScreenshot,
