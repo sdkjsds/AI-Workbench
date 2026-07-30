@@ -178,6 +178,8 @@ body {
   .sidebar.open { transform: translateX(0); }
   .sidebar-close { display: block; }
   .hamburger { display: block; z-index: 101; position: relative; }
+  /* 侧边栏展开时隐藏汉堡按钮（此时用×关闭） */
+  .sidebar.open + .main .hamburger { display: none; }
   .topbar { padding: 12px 16px; }
   .view { padding: 0 16px 16px; }
   .view > *:first-child:not(.article-top) { margin-top: 16px; }
