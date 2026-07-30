@@ -478,14 +478,14 @@ function attachArticleSwipe(el) {
     // 以水平滑动为主且距离足够才触发
     if (Math.abs(dx) < Math.abs(dy) || Math.abs(dx) < 40) return;
     if (dx < 0) {
-      // 左滑 → 上一条
-      if (ctx.index <= 0) { toast('这是第一条'); return; }
-      ctx.index--;
-      openArticle(ctx.items[ctx.index], ctx.module);
-    } else {
-      // 右滑 → 下一条
+      // 左滑 → 下一条
       if (ctx.index >= ctx.items.length - 1) { toast('这是最后一条'); return; }
       ctx.index++;
+      openArticle(ctx.items[ctx.index], ctx.module);
+    } else {
+      // 右滑 → 上一条
+      if (ctx.index <= 0) { toast('这是第一条'); return; }
+      ctx.index--;
       openArticle(ctx.items[ctx.index], ctx.module);
     }
   }, { passive: true });
