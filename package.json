@@ -13,11 +13,12 @@
     "cap:open:android": "cap open android"
   },
   "dependencies": {
+    "@capacitor/app": "^6.0.3",
     "electron": "^33.4.11"
   },
   "devDependencies": {
+    "@capacitor/android": "^6.1.2",
     "@capacitor/cli": "^6.1.2",
-    "@capacitor/core": "^6.1.2",
-    "@capacitor/android": "^6.1.2"
+    "@capacitor/core": "^6.1.2"
   }
 }
