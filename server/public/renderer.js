@@ -64,6 +64,7 @@ async function init() {
 
 function navigate(view) {
   state.lastView = view;
+  state.inArticle = false;
   $('#view-title').textContent = TITLES[view] || '';
   $('#topbar-actions').innerHTML = '';
   const v = $('#view');
@@ -318,18 +319,19 @@ async function renderFeedList(v, module) {
       c.classList.remove('unread');
       it.read = true;
       window.api.markRead(module, it.id).catch(() => {});
-      openArticle(it);
+      openArticle(it, module);
     };
     grid.appendChild(c);
   });
   v.append(grid);
 }
 
-async function openArticle(it) {
-  const module = state.lastView;
+async function openArticle(it, moduleArg) {
+  const module = moduleArg || state.lastView;
   const items = (module && state.feeds[module]) || [];
   const idx = items.findIndex((x) => x.id === it.id || x.link === it.link);
   state.articleContext = { module, items, index: idx >= 0 ? idx : 0 };
+  state.inArticle = true;
 
   const v = $('#view');
   v.innerHTML = '';
@@ -437,13 +439,17 @@ function renderArticle(v, art) {
     v.append(note);
   }
 
-  // 手机端支持左右滑动切换上/下一条
-  if (window.innerWidth <= 768 && state.articleContext && state.articleContext.items.length > 1) {
-    attachArticleSwipe(v, state.articleContext);
+  // 手机端支持左右滑动切换上/下一条（监听器只挂一次，内部实时读当前 ctx）
+  if (window.innerWidth <= 768) {
+    attachArticleSwipe(v);
   }
 }
 
-function attachArticleSwipe(el, ctx) {
+// 滑动监听只挂在 #view 上一次，handler 内部实时读取 state.articleContext，
+// 避免重复打开文章时旧监听器累积导致跨模块误跳。
+function attachArticleSwipe(el) {
+  if (el._swipeAttached) return;
+  el._swipeAttached = true;
   let startX = 0, startY = 0, tracking = false;
   el.addEventListener('touchstart', (e) => {
     startX = e.touches[0].clientX;
@@ -463,18 +469,24 @@ function attachArticleSwipe(el, ctx) {
   }, { passive: true });
   el.addEventListener('touchend', (e) => {
     if (!tracking) return;
+    const ctx = state.articleContext;
+    if (!state.inArticle || !ctx || !ctx.items || ctx.items.length <= 1) return;
     const endX = e.changedTouches[0].clientX;
     const endY = e.changedTouches[0].clientY;
     const dx = endX - startX;
     const dy = endY - startY;
     // 以水平滑动为主且距离足够才触发
     if (Math.abs(dx) < Math.abs(dy) || Math.abs(dx) < 40) return;
-    if (dx > 0 && ctx.index > 0) {
+    if (dx < 0) {
+      // 左滑 → 上一条
+      if (ctx.index <= 0) { toast('这是第一条'); return; }
       ctx.index--;
-      openArticle(ctx.items[ctx.index]);
-    } else if (dx < 0 && ctx.index < ctx.items.length - 1) {
+      openArticle(ctx.items[ctx.index], ctx.module);
+    } else {
+      // 右滑 → 下一条
+      if (ctx.index >= ctx.items.length - 1) { toast('这是最后一条'); return; }
       ctx.index++;
-      openArticle(ctx.items[ctx.index]);
+      openArticle(ctx.items[ctx.index], ctx.module);
     }
   }, { passive: true });
 }
