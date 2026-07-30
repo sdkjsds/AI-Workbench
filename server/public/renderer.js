@@ -328,6 +328,13 @@ async function renderFeedList(v, module) {
 
 async function openArticle(it, moduleArg, direction) {
   const module = moduleArg || state.lastView;
+
+  // 统一标记已读：无论是从列表点入还是左右滑动切入，都视为已读
+  if (module && it.id && !it.read) {
+    it.read = true;
+    window.api.markRead(module, it.id).catch(() => {});
+  }
+
   const items = (module && state.feeds[module]) || [];
   const idx = items.findIndex((x) => x.id === it.id || x.link === it.link);
   state.articleContext = { module, items, index: idx >= 0 ? idx : 0 };

@@ -147,7 +147,7 @@ body {
 .back-btn:hover { opacity: .9; }
 .rss-note { margin-top: 16px; font-size: 12px; color: var(--text-soft); font-style: italic; }
 .article-title { font-size: 22px; line-height: 1.4; margin-bottom: 16px; }
-.article-content { line-height: 1.8; font-size: 15px; }
+.article-content { line-height: 1.8; font-size: 15px; overflow-wrap: break-word; }
 .article-content p { margin: 0 0 14px 0; }
 .article-content h1, .article-content h2, .article-content h3 { margin: 24px 0 12px; }
 .article-content img { max-width: 100%; height: auto; }
