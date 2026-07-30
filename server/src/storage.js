@@ -9,6 +9,7 @@ function dataDir() { return DATA_DIR; }
 function feedsDir() { return path.join(DATA_DIR, 'feeds'); }
 function imgDir() { return path.join(DATA_DIR, 'images'); }
 function storiesFile() { return path.join(DATA_DIR, 'stories.json'); }
+function dressingStoriesFile() { return path.join(DATA_DIR, 'dressing-stories.json'); }
 function screenshotsFile() { return path.join(DATA_DIR, 'screenshots.json'); }
 function settingsFile() { return path.join(DATA_DIR, 'settings.json'); }
 
@@ -87,6 +88,13 @@ async function saveStory(story) {
   await writeJSON(storiesFile(), arr);
 }
 
+async function getDressingStories() { return readJSON(dressingStoriesFile(), []); }
+async function saveDressingStory(story) {
+  const arr = await getDressingStories();
+  arr.unshift(story);
+  await writeJSON(dressingStoriesFile(), arr);
+}
+
 async function getScreenshots() { return readJSON(screenshotsFile(), []); }
 async function addImageShot(filename, name, ocrText = '') {
   const meta = {
@@ -135,6 +143,7 @@ module.exports = {
   init, getSettings, saveSettings,
   getFeed, saveFeed, markRead,
   getStories, saveStory,
+  getDressingStories, saveDressingStory,
   getScreenshots, addImageShot, addTextNote, updateScreenshot,
   imgDir, dataDir,
 };

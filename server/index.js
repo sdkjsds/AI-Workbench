@@ -22,7 +22,7 @@ app.use('/images', express.static(storage.imgDir()));
 // 前端静态资源
 app.use(express.static(PUBLIC_DIR));
 
-const MODULES = ['knowledge', 'gongkao', 'licai'];
+const MODULES = ['knowledge', 'gongkao', 'licai', 'dressing'];
 function isModule(m) { return MODULES.includes(m); }
 
 // ---------- 设置 ----------
@@ -78,6 +78,27 @@ app.post('/api/story/generate', async (req, res) => {
   try {
     const s = await ai.generateDailyStory();
     res.json(s);
+  } catch (e) { res.status(400).json({ error: e.message }); }
+});
+
+// ---------- 穿搭灵感 ----------
+app.get('/api/dressing/stories', async (req, res) => {
+  res.json(await storage.getDressingStories());
+});
+app.post('/api/dressing/generate', async (req, res) => {
+  try {
+    const s = await ai.generateDressingInspiration();
+    res.json(s);
+  } catch (e) { res.status(400).json({ error: e.message }); }
+});
+
+// ---------- 文章 AI 简述 ----------
+app.post('/api/article/brief', async (req, res) => {
+  const { title, summary } = req.body || {};
+  if (!title && !summary) return res.status(400).json({ error: 'no content' });
+  try {
+    const brief = await ai.briefArticle(title || '', summary || '');
+    res.json({ brief });
   } catch (e) { res.status(400).json({ error: e.message }); }
 });
 

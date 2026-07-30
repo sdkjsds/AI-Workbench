@@ -1,5 +1,5 @@
-const state = { settings: null, feeds: {}, stories: [], screenshots: [], knowledgeTab: 'stories' };
-const TITLES = { overview: '总览', knowledge: '知识流', gongkao: '公考·政治理论', licai: '理财·经济', screenshots: '随手记', settings: '设置' };
+const state = { settings: null, feeds: {}, stories: [], screenshots: [], knowledgeTab: 'stories', dressingTab: 'inspiration' };
+const TITLES = { overview: '总览', knowledge: '知识流', gongkao: '公考·政治理论', licai: '理财·经济', dressing: '穿搭', screenshots: '随手记', settings: '设置' };
 
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
@@ -71,6 +71,7 @@ function navigate(view) {
   if (view === 'overview') renderOverview(v);
   else if (view === 'knowledge') renderKnowledge(v);
   else if (view === 'gongkao' || view === 'licai') renderFeedView(v, view);
+  else if (view === 'dressing') renderDressing(v);
   else if (view === 'screenshots') renderScreenshots(v);
   else if (view === 'settings') renderSettings(v);
 }
@@ -108,16 +109,18 @@ function tabBtn(label, active, onclick) {
 
 // ---------- 总览 ----------
 async function renderOverview(v) {
-  const [k, g, l, stories, shots] = await Promise.all([
+  const [k, g, l, d, stories, shots] = await Promise.all([
     window.api.getFeed('knowledge'), window.api.getFeed('gongkao'), window.api.getFeed('licai'),
+    window.api.getFeed('dressing'),
     window.api.getStories(), window.api.getScreenshots(),
   ]);
   const unread = (a) => a.filter((x) => !x.read).length;
-  const counts = { knowledge: unread(k), gongkao: unread(g), licai: unread(l), screenshots: shots.length };
+  const counts = { knowledge: unread(k), gongkao: unread(g), licai: unread(l), dressing: unread(d), screenshots: shots.length };
   const modules = [
     { key: 'knowledge', name: '知识流', desc: '每日新知 + 知识卡片' },
     { key: 'gongkao', name: '公考·政治', desc: '常识 / 政治理论' },
     { key: 'licai', name: '理财·经济', desc: '热点 / 经济事件' },
+    { key: 'dressing', name: '穿搭', desc: '审美输入 + 每日灵感' },
     { key: 'screenshots', name: '随手记', desc: '图片收集 + OCR' },
   ];
   const grid = document.createElement('div');
@@ -212,6 +215,62 @@ async function generateToday() {
     const s = await window.api.generateStory();
     toast('已生成：' + s.name);
     await renderKnowledge($('#view'));
+  } catch (err) {
+    toast('生成失败：' + err.message);
+  }
+}
+
+// ---------- 穿搭（每日灵感 + 卡片流） ----------
+async function renderDressing(v) {
+  $('#topbar-actions').innerHTML = '';
+  v.innerHTML = '';
+  const tabs = document.createElement('div');
+  tabs.className = 'tabs';
+  const t1 = tabBtn('每日灵感', state.dressingTab !== 'feed', () => { state.dressingTab = 'inspiration'; renderDressing(v); });
+  const t2 = tabBtn('穿搭卡片', state.dressingTab === 'feed', () => { state.dressingTab = 'feed'; renderDressing(v); });
+  tabs.append(t1, t2);
+  v.append(tabs);
+
+  if (state.dressingTab === 'feed') {
+    addAction('刷新', '', () => refreshFeed('dressing'));
+    await renderFeedList(v, 'dressing');
+  } else {
+    addAction('生成今日灵感', 'primary', generateDressingInspiration);
+    await renderDressingStories(v);
+  }
+}
+
+async function renderDressingStories(v) {
+  const stories = await window.api.getDressingStories();
+  if (!stories.length) {
+    const e = document.createElement('div');
+    e.className = 'empty';
+    e.textContent = '还没有灵感。点右上角「生成今日灵感」让 AI 给一条简短穿搭建议。';
+    v.append(e);
+    return;
+  }
+  stories.forEach((s) => {
+    const c = document.createElement('div');
+    c.className = 'card';
+    c.style.marginBottom = '16px';
+    const h = document.createElement('h3');
+    h.textContent = s.date + ' · ' + s.name;
+    const p = document.createElement('div');
+    p.className = 'story';
+    p.textContent = s.content;
+    c.append(h, p);
+    v.append(c);
+  });
+}
+
+async function generateDressingInspiration() {
+  const b = $('#topbar-actions .btn');
+  if (b) b.disabled = true;
+  toast('正在生成今日灵感…');
+  try {
+    const s = await window.api.generateDressingInspiration();
+    toast('已生成今日灵感');
+    await renderDressing($('#view'));
   } catch (err) {
     toast('生成失败：' + err.message);
   }
@@ -313,6 +372,34 @@ function renderArticle(v, art) {
   open.textContent = '在浏览器打开';
   open.onclick = () => window.api.openExternal(art.url);
   top.append(back, open);
+
+  if (state.lastView === 'dressing') {
+    const briefBtn = document.createElement('button');
+    briefBtn.className = 'btn';
+    briefBtn.textContent = 'AI 简述';
+    briefBtn.onclick = async () => {
+      briefBtn.disabled = true;
+      briefBtn.textContent = '生成中…';
+      try {
+        const r = await window.api.briefArticle(art.title, art.summary || '');
+        const box = document.createElement('div');
+        box.className = 'brief-box';
+        box.style.margin = '12px 0';
+        box.style.padding = '12px 14px';
+        box.style.background = 'var(--accent-soft)';
+        box.style.borderRadius = '8px';
+        box.style.lineHeight = '1.7';
+        box.textContent = '🤖 ' + r.brief;
+        v.insertBefore(box, title);
+      } catch (e) {
+        toast('简述失败：' + e.message);
+      } finally {
+        briefBtn.disabled = false;
+        briefBtn.textContent = 'AI 简述';
+      }
+    };
+    top.append(briefBtn);
+  }
   const title = document.createElement('h2');
   title.className = 'article-title';
   title.textContent = art.title || '无标题';
@@ -529,7 +616,7 @@ async function renderSettings(v) {
   ta2.dataset.key = 'sources';
   ta2.style.minHeight = '120px';
   const cur = s.sources || {};
-  ta2.value = ['knowledge', 'gongkao', 'licai']
+  ta2.value = ['knowledge', 'gongkao', 'licai', 'dressing']
     .map((m) => '# ' + m + '\n' + (cur[m] || []).join('\n'))
     .join('\n\n');
   sr.append(sl, ta2);

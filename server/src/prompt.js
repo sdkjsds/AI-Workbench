@@ -3,4 +3,10 @@ const DEFAULT_PROMPT = `尝试从包括但不限于经济学、物理、心理�
 
 请在全文最后以单独一行「名称：XXX」给出该原则或思想的名称，便于程序解析。`;
 
-module.exports = { DEFAULT_PROMPT };
+// 穿搭-「每日灵感」提示词：只要 2-3 句，简短、具体、不空洞
+const DRESSING_INSPIRATION_PROMPT = `请用 2-3 句话，给一条今日穿搭灵感。可以是一个配色思路、一种风格关键词、或一个具体的搭配建议。语言轻松、具体、不空洞。不要使用 Markdown 标题或列表，纯自然语言即可。`;
+
+// 单条文章-AI 简述提示词：1-2 句中文核心看点
+const ARTICLE_BRIEF_PROMPT = `下面是一篇穿搭/时尚类文章的标题和摘要。请用 1-2 句话用中文简要介绍它的核心看点，帮助读者快速判断是否值得读。只输出介绍本身，不要加任何前缀或解释。`;
+
+module.exports = { DEFAULT_PROMPT, DRESSING_INSPIRATION_PROMPT, ARTICLE_BRIEF_PROMPT };

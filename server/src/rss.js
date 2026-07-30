@@ -23,6 +23,13 @@ const DEFAULT_SOURCE_MAP = {
     'https://www.tmtpost.com/rss',
     'https://www.36kr.com/feed',
   ],
+  dressing: [
+    'https://www.vogue.com/feed',
+    'https://www.elle.com/rss/all.xml',
+    'https://www.gq.com/feed',
+    'https://www.harpersbazaar.com/rss/all.xml',
+    'https://www.whowhatwear.com/feed',
+  ],
 };
 
 function defaultSources(module) {

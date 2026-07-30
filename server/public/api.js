@@ -43,6 +43,24 @@ window.api = {
     if (!r.ok) throw new Error((await r.json()).error || '生成失败');
     return r.json();
   },
+  async getDressingStories() {
+    const r = await fetch('/api/dressing/stories');
+    return r.json();
+  },
+  async generateDressingInspiration() {
+    const r = await fetch('/api/dressing/generate', { method: 'POST' });
+    if (!r.ok) throw new Error((await r.json()).error || '生成失败');
+    return r.json();
+  },
+  async briefArticle(title, summary) {
+    const r = await fetch('/api/article/brief', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title, summary }),
+    });
+    if (!r.ok) throw new Error((await r.json()).error || '简述失败');
+    return r.json();
+  },
   async getScreenshots() {
     const r = await fetch('/api/screenshots');
     return r.json();
