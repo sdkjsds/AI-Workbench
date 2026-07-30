@@ -136,7 +136,13 @@ body {
 .toast.show { opacity: 1; }
 
 /* Article detail */
-.article-top { display: flex; gap: 10px; margin-bottom: 16px; position: sticky; top: 0; z-index: 5; background: var(--bg); padding: 4px 0; border-bottom: 1px solid var(--border); }
+.article-top {
+  display: flex; gap: 10px; margin-bottom: 16px;
+  position: sticky; top: 0; z-index: 5; background: var(--bg);
+  padding: 4px 0; border-bottom: 1px solid var(--border);
+  /* 抵消 .view 的 padding-top，使 sticky 时紧贴顶部 */
+  margin-top: -24px; padding-top: 28px;
+}
 .back-btn { font-weight: 600; background: var(--accent); color: #fff; border-color: var(--accent); }
 .back-btn:hover { opacity: .9; }
 .rss-note { margin-top: 16px; font-size: 12px; color: var(--text-soft); font-style: italic; }
@@ -176,4 +182,5 @@ body {
   .topbar { padding: 12px 16px; }
   .view { padding: 16px; }
   .grid.cols-2, .grid.cols-4 { grid-template-columns: 1fr; }
+  .article-top { margin-top: -16px; padding-top: 20px; }
 }

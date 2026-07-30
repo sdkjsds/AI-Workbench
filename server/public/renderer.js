@@ -325,6 +325,11 @@ async function renderFeedList(v, module) {
 }
 
 async function openArticle(it) {
+  const module = state.lastView;
+  const items = (module && state.feeds[module]) || [];
+  const idx = items.findIndex((x) => x.id === it.id || x.link === it.link);
+  state.articleContext = { module, items, index: idx >= 0 ? idx : 0 };
+
   const v = $('#view');
   v.innerHTML = '';
   $('#topbar-actions').innerHTML = '';
@@ -421,16 +426,70 @@ function renderArticle(v, art) {
     note.textContent = '（原文页面拉取失败，以下为订阅源自带摘要）';
     v.append(note);
   }
+
+  // 手机端支持左右滑动切换上/下一条
+  if (window.innerWidth <= 768 && state.articleContext && state.articleContext.items.length > 1) {
+    attachArticleSwipe(v, state.articleContext);
+  }
+}
+
+function attachArticleSwipe(el, ctx) {
+  let startX = 0, startY = 0, tracking = false;
+  el.addEventListener('touchstart', (e) => {
+    startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
+    tracking = true;
+  }, { passive: true });
+  el.addEventListener('touchmove', (e) => {
+    if (!tracking) return;
+    const x = e.touches[0].clientX;
+    const y = e.touches[0].clientY;
+    const dx = x - startX;
+    const dy = y - startY;
+    // 一旦判定为垂直滚动，取消本次 swipe；水平滑动继续跟踪
+    if (Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > 10) {
+      tracking = false;
+    }
+  }, { passive: true });
+  el.addEventListener('touchend', (e) => {
+    if (!tracking) return;
+    const endX = e.changedTouches[0].clientX;
+    const endY = e.changedTouches[0].clientY;
+    const dx = endX - startX;
+    const dy = endY - startY;
+    // 以水平滑动为主且距离足够才触发
+    if (Math.abs(dx) < Math.abs(dy) || Math.abs(dx) < 40) return;
+    if (dx > 0 && ctx.index > 0) {
+      ctx.index--;
+      openArticle(ctx.items[ctx.index]);
+    } else if (dx < 0 && ctx.index < ctx.items.length - 1) {
+      ctx.index++;
+      openArticle(ctx.items[ctx.index]);
+    }
+  }, { passive: true });
 }
 
 async function refreshFeed(module) {
   toast('正在拉取…');
   try {
+    const oldItems = state.feeds[module] || [];
+    const oldIds = new Set(oldItems.map((it) => it.id || it.link));
     const items = await window.api.refreshFeed(module);
     state.feeds[module] = items;
     navigate(module);
     window.scrollTo(0, 0);
-    toast('已拉取 ' + items.length + ' 条');
+    if (!Array.isArray(items)) {
+      toast('返回数据异常');
+      return;
+    }
+    const newCount = items.filter((it) => !oldIds.has(it.id || it.link)).length;
+    if (items.length === 0) {
+      toast('未拉取到内容，请检查网络或 RSS 源');
+    } else if (newCount === 0) {
+      toast('已拉取 ' + items.length + ' 条，与上次内容相同');
+    } else {
+      toast('已拉取 ' + newCount + ' 条新内容');
+    }
   } catch (err) {
     toast('拉取失败：' + err.message);
   }
