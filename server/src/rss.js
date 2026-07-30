@@ -13,15 +13,16 @@ const DEFAULT_SOURCE_MAP = {
     'https://www.ifanr.com/feed',
   ],
   gongkao: [
-    'http://www.people.com.cn/rss/politics.xml',
-    'https://www.xinhuanet.com/politics/news_politics.xml',
+    // 中新网即时新闻：实时时政综合（实测最新为当天），解决原源停更到 22 年的问题
     'https://www.chinanews.com.cn/rss/scroll-news.xml',
+    // 人民网时政频道：内容权威、有正文、链接可打开（偶有滞后，作为补充）
+    'http://www.people.com.cn/rss/politics.xml',
   ],
   licai: [
-    'https://www.xinhuanet.com/fortune/news_finance.xml',
-    'http://www.people.com.cn/rss/finance.xml',
-    'https://www.tmtpost.com/rss',
+    // 36氪：实时、含正文、链接可直接打开
     'https://www.36kr.com/feed',
+    // 钛媒体：实时、含正文、链接可直接打开（科技商业视角）
+    'https://www.tmtpost.com/rss',
   ],
   dressing: [
     'https://www.vogue.com/feed',
