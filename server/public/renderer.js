@@ -46,6 +46,29 @@ function closeSidebar() {
   ov && ov.classList.remove('show');
 }
 
+// 移动端抽屉手势：总览页从左边缘右滑打开导航栏；导航栏左滑关闭回到总览
+function bindSidebarGestures() {
+  if (window.innerWidth > 768) return;
+  let sx = 0, sy = 0;
+  document.addEventListener('touchstart', (e) => {
+    sx = e.touches[0].clientX; sy = e.touches[0].clientY;
+  }, { passive: true });
+  document.addEventListener('touchend', (e) => {
+    const dx = e.changedTouches[0].clientX - sx;
+    const dy = e.changedTouches[0].clientY - sy;
+    if (Math.abs(dy) > 50) return; // 纵向滚动，忽略
+    const sb = document.getElementById('sidebar');
+    const open = sb && sb.classList.contains('open');
+    if (open) {
+      // 导航栏打开时：向左滑关闭
+      if (dx < -60) closeSidebar();
+    } else {
+      // 总览页（非文章详情）从左边缘向右滑打开
+      if (!state.inArticle && sx <= 30 && dx > 60) toggleSidebar();
+    }
+  }, { passive: true });
+}
+
 document.addEventListener('DOMContentLoaded', init);
 
 async function init() {
@@ -54,6 +77,7 @@ async function init() {
     return;
   }
   bindNav();
+  bindSidebarGestures();
   try {
     state.settings = await window.api.getSettings();
   } catch (err) {
